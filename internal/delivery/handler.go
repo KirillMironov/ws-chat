@@ -5,12 +5,17 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"time"
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
+var (
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+
+	clients = make(map[string]*websocket.Conn)
+)
 
 func InitRoutes() *gin.Engine {
 	r := gin.Default()
@@ -18,29 +23,54 @@ func InitRoutes() *gin.Engine {
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
-	r.GET("/endpoint", wsEndpoint)
+	r.GET("/createRoom", createRoom)
+	r.GET("/connectToRoom", connectToRoom)
 	return r
 }
 
-func wsEndpoint(c *gin.Context) {
+func createRoom(c *gin.Context) {
+	roomId := c.Query("roomId")
+	if len(roomId) == 0 {
+		log.Println("empty room id")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println(err)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	log.Println("Client connected")
-	err = ws.WriteMessage(1, []byte("Hi, Client!"))
-	if err != nil {
-		log.Println(err)
-	}
+	clients[roomId] = ws
 
-	messagesReader(ws)
+	go messageReader(ws)
 }
 
-func messagesReader(conn *websocket.Conn) {
+func connectToRoom(c *gin.Context) {
+	roomId := c.Query("roomId")
+	if len(roomId) == 0 {
+		log.Println("empty room id")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
+	ws := clients[roomId]
+	if ws == nil {
+		log.Println("room doesn't exist")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	go messageReader(ws)
+}
+
+func messageReader(conn *websocket.Conn) {
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
@@ -50,9 +80,11 @@ func messagesReader(conn *websocket.Conn) {
 
 		log.Println(string(p))
 
-		if err := conn.WriteMessage(messageType, p); err != nil {
-			log.Println(err)
-			return
+		if string(p) == "What time is it?" {
+			if err := conn.WriteMessage(messageType, []byte(time.Now().String())); err != nil {
+				log.Println(err)
+				return
+			}
 		}
 	}
 }

@@ -5,26 +5,60 @@
 </head>
 <body>
 
-<h2>Hello World!</h2>
+<h2>WebSocket</h2>
+<p><input type="button" value="Create" onclick="createRoom()"></p>
+<p><label id="lbl"></label></p>
+<p><input type="button" value="Connect" onclick="connectToRoom()"></p>
+<p><label id="lbl2"></label></p>
 
 <script>
-    let socket = new WebSocket("ws://127.0.0.1:8080/endpoint");
-    console.log("Attempting Connection...");
+    function createRoom() {
+        let socket = new WebSocket("ws://localhost:8080/createRoom?roomId=qwerty123");
+        console.log("Attempting Connection...");
 
-    socket.onopen = () => {
-        console.log("Successfully Connected");
-        socket.send("Hi From the Client!")
-    };
+        socket.onopen = () => {
+            console.log("Successfully Connected");
+            socket.send("What time is it?")
+        };
 
-    socket.onclose = event => {
-        console.log("Socket Closed Connection: ", event);
-        socket.send("Client Closed!")
-    };
+        socket.onmessage = message => {
+            document.getElementById("lbl").innerHTML = message.data.toString()
+            console.log("New message: ", message);
+            socket.send("Got it")
+        }
 
-    socket.onerror = error => {
-        console.log("Socket Error: ", error);
-    };
+        socket.onclose = event => {
+            console.log("Socket Closed Connection: ", event);
+        };
 
+        socket.onerror = error => {
+            console.log("Socket Error: ", error);
+        };
+    }
+
+    function connectToRoom() {
+        let socket = new WebSocket("ws://localhost:8080/connectToRoom?roomId=qwerty123");
+        console.log("Attempting Connection...");
+
+        socket.onopen = () => {
+            console.log("Successfully Connected");
+            socket.send("What time is it?")
+        };
+
+        socket.onmessage = message => {
+            document.getElementById("lbl2").innerHTML = message.data.toString()
+            console.log("New message: ", message);
+            socket.send("Got it")
+        }
+
+        socket.onclose = event => {
+            console.log("Socket Closed Connection: ", event);
+        };
+
+        socket.onerror = error => {
+            console.log("Socket Error: ", error);
+        };
+    }
 </script>
 
 </body>
