@@ -10,38 +10,42 @@
 <p><label id="lbl"></label></p>
 
 <script>
-    let socket = new WebSocket("ws://localhost:8080/createRoom?roomId=qwerty123");
-    console.log("Attempting Connection...");
-
-    socket.onmessage = message => {
-        document.getElementById("lbl").innerHTML = message.data.toString()
-        console.log("New message: ", message);
-        socket.send("Got it!")
-    }
-
-    socket.onclose = event => {
-        console.log("Socket Closed Connection: ", event);
-    };
-
-    socket.onerror = error => {
-        console.log("Socket Error: ", error);
-    };
-
-    socket.onopen = () => {
-        console.log("Successfully Connected");
-    };
-
     const sleep = ms => new Promise(res => setTimeout(res, ms))
 
-    async function createRoom() {
+    async function writeMessage(socket, msg, timeout) {
         for (let i = 0; i < 100; i++) {
             if (socket.readyState === WebSocket.OPEN) {
-                socket.send("What time is it?")
-                await sleep(2000)
+                socket.send(msg)
+                await sleep(timeout)
             } else {
                 return
             }
         }
+    }
+
+    async function createRoom() {
+        let socket = new WebSocket("ws://localhost:8080/createRoom?roomId=qwerty123");
+        console.log("Attempting Connection...");
+
+        socket.onmessage = message => {
+            document.getElementById("lbl").innerHTML = message.data.toString()
+            console.log("New message: ", message);
+            socket.send("Got it!")
+        };
+
+        socket.onclose = event => {
+            console.log("Socket Closed Connection: ", event);
+        };
+
+        socket.onerror = error => {
+            document.getElementById("lbl").innerHTML = error.type.toString()
+            console.log("Socket Error: ", error);
+        };
+
+        socket.onopen = () => {
+            console.log("Successfully Connected");
+            writeMessage(socket, "What time is it?", 2000)
+        };
     }
 </script>
 

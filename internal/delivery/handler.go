@@ -36,6 +36,12 @@ func createRoom(c *gin.Context) {
 		return
 	}
 
+	if clients[roomId] != nil {
+		log.Println("room is already exists")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	msg := make(chan bool)
 
