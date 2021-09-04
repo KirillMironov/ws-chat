@@ -6,14 +6,24 @@
 <body>
 
 <h2>WebSocket</h2>
-<p><input type="button" value="Create" onclick="createRoom()"></p>
-<p><label id="lbl">lbl</label></p>
-<p><input type="button" value="Connect" onclick="connectToRoom()"></p>
-<p><label id="lbl2">lbl2</label></p>
+
+<label for="username">username</label>
+<input type="text" id="username">
+
+<p>
+    <input type="button" value="Create" onclick="createRoom()">
+    <label id="lbl">lbl</label>
+</p>
+
+<p>
+    <input type="button" value="Connect" onclick="connectToRoom()">
+    <label id="lbl2">lbl2</label>
+</p>
 
 <script>
     function createRoom() {
-        let socket = new WebSocket("ws://localhost:8080/createRoom?username=Homer");
+        let socket = new WebSocket("ws://localhost:8080/createRoom?username="
+            + document.getElementById("username").value);
         console.log("Attempting Connection...");
 
         socket.onmessage = message => {
@@ -36,7 +46,8 @@
     }
 
     function connectToRoom() {
-        let socket = new WebSocket("ws://localhost:8080/connectToRoom?username=Bart");
+        let socket = new WebSocket("ws://localhost:8080/connectToRoom?username="
+            + document.getElementById("username").value);
         console.log("Attempting Connection...");
 
         socket.onmessage = message => {
