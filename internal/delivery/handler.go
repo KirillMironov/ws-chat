@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log"
@@ -12,9 +13,10 @@ var (
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin:     func(r *http.Request) bool { return true },
 	}
 
-	clients = make(map[string]*websocket.Conn)
+	rooms = make(map[domain.Client]bool)
 )
 
 func InitRoutes() *gin.Engine {
@@ -24,26 +26,18 @@ func InitRoutes() *gin.Engine {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 	r.GET("/createRoom", createRoom)
-	//r.GET("/connectToRoom", connectToRoom)
+	r.GET("/connectToRoom", connectToRoom)
+	go messageWriter()
 	return r
 }
 
 func createRoom(c *gin.Context) {
-	roomId := c.Query("roomId")
-	if len(roomId) == 0 {
-		log.Println("empty room id")
+	username := c.Query("username")
+	if len(username) == 0 {
+		log.Println("username wasn't provided")
 		c.Status(http.StatusBadRequest)
 		return
 	}
-
-	if clients[roomId] != nil {
-		log.Println("room is already exists")
-		c.Status(http.StatusBadRequest)
-		return
-	}
-
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-	msg := make(chan bool)
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -52,53 +46,69 @@ func createRoom(c *gin.Context) {
 		return
 	}
 
-	clients[roomId] = ws
+	client := domain.Client{
+		Username: username,
+		Conn:     ws,
+	}
+	rooms[client] = true
 
-	go messageReader(msg, ws)
-	go messageWriter(msg, ws)
+	go messageReader(&client)
 }
 
-//func connectToRoom(c *gin.Context) {
-//	roomId := c.Query("roomId")
-//	if len(roomId) == 0 {
-//		log.Println("empty room id")
-//		c.Status(http.StatusBadRequest)
-//		return
-//	}
-//
-//	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-//
-//	ws := clients[roomId]
-//	if ws == nil {
-//		log.Println("room doesn't exist")
-//		c.Status(http.StatusBadRequest)
-//		return
-//	}
-//
-//	go messageReader(ws)
-//}
+func connectToRoom(c *gin.Context) {
+	username := c.Query("username")
+	if len(username) == 0 {
+		log.Println("username wasn't provided")
+		c.Status(http.StatusBadRequest)
+		return
+	}
 
-func messageReader(msg chan bool, conn *websocket.Conn) {
+	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Println(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	client := domain.Client{
+		Username: username,
+		Conn:     ws,
+	}
+	rooms[client] = true
+
+	go messageReader(&client)
+}
+
+func messageReader(client *domain.Client) {
+	defer func() {
+		log.Printf("closing connection with client: %s", client.Username)
+		_ = client.Conn.Close()
+		delete(rooms, *client)
+	}()
+
 	for {
-		_, p, err := conn.ReadMessage()
+		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
 		log.Println(string(p))
-
-		if string(p) == "What time is it?" {
-			msg <- true
-		}
 	}
 }
 
-func messageWriter(msg chan bool, conn *websocket.Conn) {
-	for _ = range msg {
-		if err := conn.WriteMessage(1, []byte(time.Now().String())); err != nil {
-			log.Println(err)
-			return
+func messageWriter() {
+	for {
+		for client := range rooms {
+			log.Printf("sending message to client: %s", client.Username)
+
+			err := client.Conn.WriteMessage(1, []byte(time.Now().String()))
+			if err != nil {
+				log.Println(err)
+				return
+			}
 		}
+
+		time.Sleep(5 * time.Second)
 	}
 }

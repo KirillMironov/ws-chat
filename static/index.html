@@ -7,30 +7,18 @@
 
 <h2>WebSocket</h2>
 <p><input type="button" value="Create" onclick="createRoom()"></p>
-<p><label id="lbl"></label></p>
+<p><label id="lbl">lbl</label></p>
+<p><input type="button" value="Connect" onclick="connectToRoom()"></p>
+<p><label id="lbl2">lbl2</label></p>
 
 <script>
-    const sleep = ms => new Promise(res => setTimeout(res, ms))
-
-    async function writeMessage(socket, msg, timeout) {
-        for (let i = 0; i < 100; i++) {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(msg)
-                await sleep(timeout)
-            } else {
-                return
-            }
-        }
-    }
-
-    async function createRoom() {
-        let socket = new WebSocket("ws://localhost:8080/createRoom?roomId=qwerty123");
+    function createRoom() {
+        let socket = new WebSocket("ws://localhost:8080/createRoom?username=Homer");
         console.log("Attempting Connection...");
 
         socket.onmessage = message => {
             document.getElementById("lbl").innerHTML = message.data.toString()
             console.log("New message: ", message);
-            socket.send("Got it!")
         };
 
         socket.onclose = event => {
@@ -44,7 +32,29 @@
 
         socket.onopen = () => {
             console.log("Successfully Connected");
-            writeMessage(socket, "What time is it?", 2000)
+        };
+    }
+
+    function connectToRoom() {
+        let socket = new WebSocket("ws://localhost:8080/connectToRoom?username=Bart");
+        console.log("Attempting Connection...");
+
+        socket.onmessage = message => {
+            document.getElementById("lbl2").innerHTML = message.data.toString()
+            console.log("New message: ", message);
+        };
+
+        socket.onclose = event => {
+            console.log("Socket Closed Connection: ", event);
+        };
+
+        socket.onerror = error => {
+            document.getElementById("lbl2").innerHTML = error.type.toString()
+            console.log("Socket Error: ", error);
+        };
+
+        socket.onopen = () => {
+            console.log("Successfully Connected");
         };
     }
 </script>
