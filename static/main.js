@@ -8,8 +8,12 @@ function connectToRoom() {
         document.getElementById("messages_area").value = "";
     }
 
-    socket = new WebSocket("ws://localhost:8080/connectToRoom?username="
-        + document.getElementById("username").value);
+    socket = new WebSocket("ws://localhost:8080/connectToRoom" +
+        "?username="
+        + document.getElementById("username").value
+        + "&roomId="
+        + document.getElementById("room_id").value);
+
     console.log("Attempting Connection...");
 
     socket.onopen = () => {
@@ -30,4 +34,15 @@ function connectToRoom() {
         console.log("Socket Error: ", error);
         document.getElementById("connection_status").innerHTML = error.type.toString();
     };
+}
+
+function sendMessage() {
+    let message = document.getElementById("message_input").value.toString();
+
+    if (socket == null || message === "") {
+        return;
+    }
+
+    socket.send(message);
+    document.getElementById("message_input").value = "";
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"time"
 )
 
 var (
@@ -16,7 +15,8 @@ var (
 		CheckOrigin:     func(r *http.Request) bool { return true },
 	}
 
-	rooms = make(map[domain.Client]bool)
+	rooms    = make(map[string]map[domain.Client]bool)
+	channels = make(map[string]chan string)
 )
 
 func InitRoutes() *gin.Engine {
@@ -27,14 +27,14 @@ func InitRoutes() *gin.Engine {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 	r.GET("/connectToRoom", connectToRoom)
-	go messageWriter()
 	return r
 }
 
 func connectToRoom(c *gin.Context) {
 	username := c.Query("username")
-	if len(username) == 0 {
-		log.Println("username wasn't provided")
+	roomId := c.Query("roomId")
+	if len(username) == 0 || len(roomId) == 0 {
+		log.Println("not enough query params")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -48,20 +48,33 @@ func connectToRoom(c *gin.Context) {
 
 	client := domain.Client{
 		Username: username,
+		RoomId:   roomId,
 		Conn:     ws,
 	}
-	rooms[client] = true
 
-	log.Printf("new client '%s'", client.Username)
+	if rooms[roomId] == nil {
+		rooms[roomId] = make(map[domain.Client]bool)
+		rooms[roomId][client] = true
+	} else {
+		rooms[roomId][client] = true
+	}
 
-	go messageReader(&client)
+	if channels[roomId] == nil {
+		msg := make(chan string)
+		channels[roomId] = msg
+		go messageWriter(roomId, channels[roomId])
+	}
+
+	log.Printf("new client '%s', roomId: '%s'", client.Username, client.RoomId)
+
+	go messageReader(&client, channels[roomId])
 }
 
-func messageReader(client *domain.Client) {
+func messageReader(client *domain.Client, messages chan string) {
 	defer func() {
 		_ = client.Conn.Close()
-		delete(rooms, *client)
-		log.Printf("closed connection with '%s'", client.Username)
+		delete(rooms[client.RoomId], *client)
+		log.Printf("closed connection with '%s', roomId: '%s'", client.Username, client.RoomId)
 	}()
 
 	for {
@@ -72,21 +85,22 @@ func messageReader(client *domain.Client) {
 		}
 
 		log.Println(string(p))
+
+		messages <- string(p)
 	}
 }
 
-func messageWriter() {
+func messageWriter(roomId string, messages chan string) {
 	for {
-		for client := range rooms {
-			log.Printf("sending message to '%s'", client.Username)
-
-			err := client.Conn.WriteMessage(1, []byte(time.Now().String()))
-			if err != nil {
-				log.Println(err)
-				return
+		select {
+		case msg := <-messages:
+			for client := range rooms[roomId] {
+				err := client.Conn.WriteMessage(1, []byte(msg))
+				if err != nil {
+					log.Println(err)
+					return
+				}
 			}
 		}
-
-		time.Sleep(5 * time.Second)
 	}
 }
