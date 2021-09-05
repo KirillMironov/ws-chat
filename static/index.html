@@ -6,83 +6,22 @@
 </head>
 <body>
 
-<h2>WebSocket</h2>
+    <h2>WebSocket</h2>
 
-<label for="username">username</label><br/>
-<input type="text" id="username">
+    <label for="username">username</label><br/>
+    <input type="text" id="username">
 
-<p>
-    <input type="button" value="Create" onclick="createRoom()">
-    <label id="lbl"></label>
-</p>
+    <p>
+        <input type="button" value="Create" onclick="connectToRoom()">
+        <label id="connection_status"></label>
+    </p>
 
-<p>
-    <input type="button" value="Connect" onclick="connectToRoom()">
-    <label id="lbl2"></label>
-</p>
+    <p>
+        <label for="messages_area">messages</label><br/>
+        <textarea id="messages_area" rows="25" cols="75"></textarea>
+    </p>
 
-<p>
-    <label for="messages_area">Messages</label>
-    <br/>
-    <textarea id="messages_area" rows="25" cols="75"></textarea>
-</p>
-
-<script>
-    const GREEN_CIRCLE_EMOJI = '&#128994;';
-    const RED_CIRCLE_EMOJI = '&#128308;';
-
-    function createRoom() {
-        let socket = new WebSocket("ws://localhost:8080/createRoom?username="
-            + document.getElementById("username").value);
-        console.log("Attempting Connection...");
-
-        socket.onmessage = message => {
-            document.getElementById("messages_area").value += message.data + "\r\n";
-            console.log("New message: ", message);
-        };
-
-        socket.onclose = event => {
-            console.log("Socket Closed Connection: ", event);
-            document.getElementById("lbl").innerHTML = RED_CIRCLE_EMOJI;
-        };
-
-        socket.onerror = error => {
-            document.getElementById("lbl").innerHTML = error.type.toString();
-            console.log("Socket Error: ", error);
-        };
-
-        socket.onopen = () => {
-            console.log("Successfully Connected");
-            document.getElementById("lbl").innerHTML = GREEN_CIRCLE_EMOJI;
-        };
-    }
-
-    function connectToRoom() {
-        let socket = new WebSocket("ws://localhost:8080/connectToRoom?username="
-            + document.getElementById("username").value);
-        console.log("Attempting Connection...");
-
-        socket.onmessage = message => {
-            document.getElementById("messages_area").value += message.data + "\r\n";
-            console.log("New message: ", message);
-        };
-
-        socket.onclose = event => {
-            console.log("Socket Closed Connection: ", event);
-            document.getElementById("lbl2").innerHTML = RED_CIRCLE_EMOJI;
-        };
-
-        socket.onerror = error => {
-            document.getElementById("lbl2").innerHTML = error.type.toString();
-            console.log("Socket Error: ", error);
-        };
-
-        socket.onopen = () => {
-            console.log("Successfully Connected");
-            document.getElementById("lbl2").innerHTML = GREEN_CIRCLE_EMOJI;
-        };
-    }
-</script>
+    <script src="/static/main.js"></script>
 
 </body>
 </html>
