@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"encoding/json"
 	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -15,8 +16,7 @@ var (
 		CheckOrigin:     func(r *http.Request) bool { return true },
 	}
 
-	rooms    = make(map[string]map[domain.Client]bool)
-	channels = make(map[string]chan string)
+	rooms = make(map[string]domain.Room)
 )
 
 func InitRoutes() *gin.Engine {
@@ -52,28 +52,34 @@ func connectToRoom(c *gin.Context) {
 		Conn:     ws,
 	}
 
-	if rooms[roomId] == nil {
-		rooms[roomId] = make(map[domain.Client]bool)
-		rooms[roomId][client] = true
+	if _, ok := rooms[roomId]; ok {
+		rooms[roomId].Clients[client] = true
 	} else {
-		rooms[roomId][client] = true
-	}
+		msg := make(chan domain.Message)
 
-	if channels[roomId] == nil {
-		msg := make(chan string)
-		channels[roomId] = msg
-		go messageWriter(roomId, channels[roomId])
+		room := domain.Room{
+			Id:        roomId,
+			Broadcast: msg,
+		}
+		room.Clients = make(map[domain.Client]bool)
+		room.Clients[client] = true
+
+		rooms[roomId] = room
+
+		go messageWriter(roomId, rooms[roomId].Broadcast)
 	}
 
 	log.Printf("new client '%s', roomId: '%s'", client.Username, client.RoomId)
-
-	go messageReader(&client, channels[roomId])
+	go messageReader(&client, rooms[roomId].Broadcast)
 }
 
-func messageReader(client *domain.Client, messages chan string) {
+func messageReader(client *domain.Client, messages chan<- domain.Message) {
 	defer func() {
 		_ = client.Conn.Close()
-		delete(rooms[client.RoomId], *client)
+		delete(rooms[client.RoomId].Clients, *client)
+		if len(rooms[client.RoomId].Clients) == 0 {
+			delete(rooms, client.RoomId)
+		}
 		log.Printf("closed connection with '%s', roomId: '%s'", client.Username, client.RoomId)
 	}()
 
@@ -84,18 +90,26 @@ func messageReader(client *domain.Client, messages chan string) {
 			return
 		}
 
-		log.Println(string(p))
-
-		messages <- string(p)
+		messages <- domain.Message{
+			Username: client.Username,
+			Text:     string(p),
+		}
 	}
 }
 
-func messageWriter(roomId string, messages chan string) {
+func messageWriter(roomId string, messages <-chan domain.Message) {
 	for {
 		select {
 		case msg := <-messages:
-			for client := range rooms[roomId] {
-				err := client.Conn.WriteMessage(1, []byte(msg))
+			for client := range rooms[roomId].Clients {
+				js, err := json.Marshal(msg)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println(string(js))
+
+				err = client.Conn.WriteMessage(1, js)
 				if err != nil {
 					log.Println(err)
 					return
