@@ -48,39 +48,40 @@ func connectToRoom(c *gin.Context) {
 
 	client := domain.Client{
 		Username: username,
-		RoomId:   roomId,
 		Conn:     ws,
 	}
 
 	if _, ok := rooms[roomId]; ok {
 		rooms[roomId].Clients[client] = true
 	} else {
-		msg := make(chan domain.Message)
-
-		room := domain.Room{
-			Id:        roomId,
-			Broadcast: msg,
-		}
-		room.Clients = make(map[domain.Client]bool)
-		room.Clients[client] = true
-
-		rooms[roomId] = room
-
+		createNewRoom(&client, roomId)
 		go messageWriter(roomId, rooms[roomId].Broadcast)
 	}
 
-	log.Printf("new client '%s', roomId: '%s'", client.Username, client.RoomId)
-	go messageReader(&client, rooms[roomId].Broadcast)
+	log.Printf("new client: '%s', roomId: '%s'", client.Username, roomId)
+	go messageReader(&client, roomId, rooms[roomId].Broadcast)
 }
 
-func messageReader(client *domain.Client, messages chan<- domain.Message) {
+func createNewRoom(client *domain.Client, roomId string) {
+	msg := make(chan domain.Message)
+	room := domain.Room{
+		Id:        roomId,
+		Clients:   make(map[domain.Client]bool),
+		Broadcast: msg,
+	}
+	room.Clients[*client] = true
+	rooms[roomId] = room
+}
+
+func messageReader(client *domain.Client, roomId string, messages chan<- domain.Message) {
 	defer func() {
 		_ = client.Conn.Close()
-		delete(rooms[client.RoomId].Clients, *client)
-		if len(rooms[client.RoomId].Clients) == 0 {
-			delete(rooms, client.RoomId)
+		delete(rooms[roomId].Clients, *client)
+		if len(rooms[roomId].Clients) == 0 {
+			delete(rooms, roomId)
+			log.Printf("deleted empty room: '%s'", roomId)
 		}
-		log.Printf("closed connection with '%s', roomId: '%s'", client.Username, client.RoomId)
+		log.Printf("closed connection with client: '%s', roomId: '%s'", client.Username, roomId)
 	}()
 
 	for {
@@ -107,7 +108,7 @@ func messageWriter(roomId string, messages <-chan domain.Message) {
 					log.Println(err)
 					return
 				}
-				log.Println(string(js))
+				log.Printf("sending message: '%s' to client: '%s'", js, client.Username)
 
 				err = client.Conn.WriteMessage(1, js)
 				if err != nil {
