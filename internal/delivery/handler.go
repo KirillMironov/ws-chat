@@ -2,39 +2,43 @@ package delivery
 
 import (
 	"github.com/KirillMironov/ws-chat/domain"
+	"github.com/KirillMironov/ws-chat/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"time"
 )
 
-var (
-	upgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		CheckOrigin:     func(r *http.Request) bool { return true },
-	}
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
+}
 
-	rooms = make(map[domain.Client]bool)
-)
+type Handler struct {
+	MessengerService service.Messenger
+}
 
-func InitRoutes() *gin.Engine {
+func NewHandler(ms service.Messenger) *Handler {
+	return &Handler{MessengerService: ms}
+}
+
+func (h *Handler) InitRoutes() *gin.Engine {
 	r := gin.Default()
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("static/index.html")
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
-	r.GET("/connectToRoom", connectToRoom)
-	go messageWriter()
+	r.GET("/connectToRoom", h.connectToRoom)
 	return r
 }
 
-func connectToRoom(c *gin.Context) {
+func (h *Handler) connectToRoom(c *gin.Context) {
 	username := c.Query("username")
-	if len(username) == 0 {
-		log.Println("username wasn't provided")
+	roomId := c.Query("roomId")
+	if len(username) == 0 || len(roomId) == 0 {
+		log.Println("not enough query params")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -50,43 +54,6 @@ func connectToRoom(c *gin.Context) {
 		Username: username,
 		Conn:     ws,
 	}
-	rooms[client] = true
 
-	log.Printf("new client '%s'", client.Username)
-
-	go messageReader(&client)
-}
-
-func messageReader(client *domain.Client) {
-	defer func() {
-		_ = client.Conn.Close()
-		delete(rooms, *client)
-		log.Printf("closed connection with '%s'", client.Username)
-	}()
-
-	for {
-		_, p, err := client.Conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		log.Println(string(p))
-	}
-}
-
-func messageWriter() {
-	for {
-		for client := range rooms {
-			log.Printf("sending message to '%s'", client.Username)
-
-			err := client.Conn.WriteMessage(1, []byte(time.Now().String()))
-			if err != nil {
-				log.Println(err)
-				return
-			}
-		}
-
-		time.Sleep(5 * time.Second)
-	}
+	h.MessengerService.ConnectClient(&client, roomId)
 }

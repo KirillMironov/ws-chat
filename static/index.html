@@ -8,18 +8,34 @@
 
     <h2>WebSocket</h2>
 
-    <label for="username">username</label><br/>
-    <input type="text" id="username">
+    <div>
+        <label for="username">username</label><br/>
+        <input type="text" id="username"><br/>
 
-    <p>
-        <input type="button" value="Create" onclick="connectToRoom()">
-        <label id="connection_status"></label>
-    </p>
+        <label for="room_id">room id</label><br/>
+        <input type="text" id="room_id"><br/>
 
-    <p>
-        <label for="messages_area">messages</label><br/>
-        <textarea id="messages_area" rows="25" cols="75"></textarea>
-    </p>
+        <p>
+            <input type="button" value="Connect" onclick="connectToRoom()">
+            <label id="connection_status"></label>
+        </p>
+    </div><hr>
+
+    <div>
+        <label for="message_input">message</label><br/>
+        <textarea id="message_input" rows="5" cols="75"></textarea>
+
+        <p>
+            <input type="button" value="Send" onclick="sendMessage()">
+        </p>
+    </div><hr>
+
+    <div>
+        <p>
+            <label for="messages_area">messages</label><br/>
+            <textarea id="messages_area" rows="25" cols="75" readonly></textarea>
+        </p>
+    </div>
 
     <script src="/static/main.js"></script>
 
