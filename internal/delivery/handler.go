@@ -30,14 +30,14 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
-	r.GET("/connectToRoom", h.connectToRoom)
+	r.GET("/rooms/:roomId", h.connectToRoom)
 	return r
 }
 
 func (h *Handler) connectToRoom(c *gin.Context) {
+	roomId := c.Param("roomId")
 	username := c.Query("username")
-	roomId := c.Query("roomId")
-	if len(username) == 0 || len(roomId) == 0 {
+	if len(roomId) == 0 || len(username) == 0 {
 		log.Println("not enough query params")
 		c.Status(http.StatusBadRequest)
 		return

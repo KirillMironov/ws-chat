@@ -8,11 +8,10 @@ function connectToRoom() {
         document.getElementById("messages_area").value = "";
     }
 
-    socket = new WebSocket("ws://localhost:8080/connectToRoom" +
-        "?username="
-        + document.getElementById("username").value
-        + "&roomId="
-        + document.getElementById("room_id").value);
+    socket = new WebSocket("ws://localhost:8080/rooms/"
+        + document.getElementById("room_id").value
+        + "?username="
+        + document.getElementById("username").value);
 
     console.log("Attempting Connection...");
 
