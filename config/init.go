@@ -1,26 +1,14 @@
 package config
 
 import (
-	"log"
-	"os"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
-	Port string
+	Port string `default:"8080" envconfig:"PORT"`
 }
 
-func InitConfig() *Config {
+func InitConfig() (*Config, error) {
 	var config Config
-
-	config.Port = getEnv("PORT")
-	return &config
-}
-
-func getEnv(key string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists {
-		log.Fatalf("Environment variable %s was not found", key)
-		return ""
-	}
-	return value
+	return &config, envconfig.Process("", &config)
 }
