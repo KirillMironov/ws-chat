@@ -2,9 +2,10 @@ package main
 
 import (
 	"github.com/KirillMironov/ws-chat/config"
-	"github.com/KirillMironov/ws-chat/domain"
-	"github.com/KirillMironov/ws-chat/internal/delivery"
+	"github.com/KirillMironov/ws-chat/internal/delivery/v1"
+	redisRepo "github.com/KirillMironov/ws-chat/internal/repository/redis"
 	"github.com/KirillMironov/ws-chat/internal/service"
+	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,11 +24,18 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	// App
-	rooms := make(map[string]domain.Room)
+	// Redis
+	client := redis.NewClient(&redis.Options{
+		Addr:     cfg.Redis.Addr,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	})
+	defer client.Close()
 
-	messenger := service.NewWebSocketMessenger(rooms, logger)
-	handler := delivery.NewHandler(messenger, logger)
+	// App
+	messagesRepo := redisRepo.NewMessagesRepo(client)
+	messenger := service.NewWebSocketMessenger(messagesRepo, logger)
+	handler := v1.NewHandler(messenger, logger)
 
 	logger.Fatal(handler.InitRoutes().Run(":" + cfg.Port))
 }

@@ -1,4 +1,4 @@
-package delivery
+package v1
 
 import (
 	"github.com/KirillMironov/ws-chat/domain"
@@ -53,8 +53,9 @@ func (h *Handler) connectToRoom(c *gin.Context) {
 
 	client := &domain.Client{
 		Username: username,
+		RoomId:   roomId,
 		Conn:     ws,
 	}
 
-	h.messengerService.ConnectClient(client, roomId)
+	h.messengerService.ConnectClient(client)
 }

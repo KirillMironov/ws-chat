@@ -6,6 +6,12 @@ import (
 
 type Config struct {
 	Port string `default:"8080" envconfig:"PORT"`
+
+	Redis struct {
+		Addr     string `default:"localhost:6379" envconfig:"REDIS_ADDR"`
+		Password string `default:"" envconfig:"REDIS_PASSWORD"`
+		DB       int    `default:"0" envconfig:"REDIS_DB"`
+	}
 }
 
 func InitConfig() (*Config, error) {
