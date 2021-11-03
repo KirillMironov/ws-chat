@@ -25,6 +25,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("static/index.html")

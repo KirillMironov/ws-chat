@@ -3,6 +3,6 @@ package repository
 import "github.com/go-redis/redis/v8"
 
 type Messages interface {
-	SendMessage(roomId, message string) error
+	SendMessage(roomId string, message []byte) error
 	GetMessages(roomId string) <-chan *redis.Message
 }

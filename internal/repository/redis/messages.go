@@ -13,7 +13,7 @@ func NewMessagesRepo(client *redis.Client) *MessagesRepository {
 	return &MessagesRepository{client: client}
 }
 
-func (m MessagesRepository) SendMessage(roomId, message string) error {
+func (m MessagesRepository) SendMessage(roomId string, message []byte) error {
 	return m.client.Publish(context.Background(), roomId, message).Err()
 }
 
