@@ -3,24 +3,25 @@ package delivery
 import (
 	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/KirillMironov/ws-chat/internal/service"
+	"github.com/KirillMironov/ws-chat/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"log"
 	"net/http"
 )
+
+type Handler struct {
+	messengerService service.Messenger
+	logger           logger.Logger
+}
+
+func NewHandler(messengerService service.Messenger, logger logger.Logger) *Handler {
+	return &Handler{messengerService: messengerService, logger: logger}
+}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin:     func(r *http.Request) bool { return true },
-}
-
-type Handler struct {
-	MessengerService service.Messenger
-}
-
-func NewHandler(ms service.Messenger) *Handler {
-	return &Handler{MessengerService: ms}
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
@@ -38,22 +39,22 @@ func (h *Handler) connectToRoom(c *gin.Context) {
 	username := c.Query("username")
 	roomId := c.Query("roomId")
 	if len(username) == 0 || len(roomId) == 0 {
-		log.Println("not enough query params")
 		c.Status(http.StatusBadRequest)
+		h.logger.Info("not enough query params")
 		return
 	}
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		log.Println(err)
 		c.Status(http.StatusInternalServerError)
+		h.logger.Error(err)
 		return
 	}
 
-	client := domain.Client{
+	client := &domain.Client{
 		Username: username,
 		Conn:     ws,
 	}
 
-	h.MessengerService.ConnectClient(&client, roomId)
+	h.messengerService.ConnectClient(client, roomId)
 }
