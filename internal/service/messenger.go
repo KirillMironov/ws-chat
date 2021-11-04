@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/KirillMironov/ws-chat/internal/repository"
@@ -18,14 +19,16 @@ func NewWebSocketMessenger(repo repository.Messages, logger logger.Logger) *WebS
 }
 
 func (w WebSocketMessenger) ConnectClient(client *domain.Client) {
+	closeSignal := make(chan bool)
+	go w.messageWriter(client, closeSignal)
+	go w.messageReader(client, closeSignal)
 	w.logger.Infof("new client: '%s', roomId: '%s'", client.Username, client.RoomId)
-	go w.messageWriter(client)
-	go w.messageReader(client)
 }
 
-func (w WebSocketMessenger) messageWriter(client *domain.Client) {
+func (w WebSocketMessenger) messageWriter(client *domain.Client, closeSignal chan<- bool) {
 	defer func() {
 		_ = client.Conn.Close()
+		closeSignal <- true
 		w.logger.Infof("closed connection with client: '%s', roomId: '%s'", client.Username, client.RoomId)
 	}()
 
@@ -51,17 +54,23 @@ func (w WebSocketMessenger) messageWriter(client *domain.Client) {
 	}
 }
 
-func (w WebSocketMessenger) messageReader(client *domain.Client) {
+func (w WebSocketMessenger) messageReader(client *domain.Client, closeSignal <-chan bool) {
 	subscription := w.repo.Subscribe(client.RoomId)
 
 	for {
 		select {
-		case message := <-subscription:
+		case message := <-subscription.Channel():
 			err := client.Conn.WriteMessage(websocket.TextMessage, []byte(message.Payload))
 			if err != nil {
 				return
 			}
 			w.logger.Infof("sent message: '%s' to client: '%s'", message.Payload, client.Username)
+		case <-closeSignal:
+			err := subscription.Unsubscribe(context.Background(), client.RoomId)
+			if err != nil {
+				w.logger.Error(err)
+				return
+			}
 		}
 	}
 }

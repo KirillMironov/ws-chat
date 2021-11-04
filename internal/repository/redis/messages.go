@@ -17,6 +17,6 @@ func (m MessagesRepository) Publish(roomId string, message []byte) error {
 	return m.client.Publish(context.Background(), roomId, message).Err()
 }
 
-func (m MessagesRepository) Subscribe(roomId string) <-chan *redis.Message {
-	return m.client.Subscribe(context.Background(), roomId).Channel()
+func (m MessagesRepository) Subscribe(roomId string) *redis.PubSub {
+	return m.client.Subscribe(context.Background(), roomId)
 }
