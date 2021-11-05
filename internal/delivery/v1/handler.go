@@ -1,4 +1,4 @@
-package delivery
+package v1
 
 import (
 	"github.com/KirillMironov/ws-chat/domain"
@@ -25,6 +25,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("static/index.html")
@@ -53,8 +54,9 @@ func (h *Handler) connectToRoom(c *gin.Context) {
 
 	client := &domain.Client{
 		Username: username,
+		RoomId:   roomId,
 		Conn:     ws,
 	}
 
-	h.messengerService.ConnectClient(client, roomId)
+	h.messengerService.ConnectClient(client)
 }

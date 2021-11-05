@@ -1,86 +1,74 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/KirillMironov/ws-chat/domain"
+	"github.com/KirillMironov/ws-chat/internal/repository"
 	"github.com/KirillMironov/ws-chat/pkg/logger"
+	"github.com/gorilla/websocket"
 )
 
 type WebSocketMessenger struct {
-	rooms  map[string]domain.Room
+	repo   repository.Messages
 	logger logger.Logger
 }
 
-func NewWebSocketMessenger(rooms map[string]domain.Room, logger logger.Logger) *WebSocketMessenger {
-	return &WebSocketMessenger{rooms: rooms, logger: logger}
+func NewWebSocketMessenger(repo repository.Messages, logger logger.Logger) *WebSocketMessenger {
+	return &WebSocketMessenger{repo: repo, logger: logger}
 }
 
-func (m WebSocketMessenger) ConnectClient(client *domain.Client, roomId string) {
-	if _, ok := m.rooms[roomId]; ok {
-		m.rooms[roomId].Clients[*client] = true
-	} else {
-		m.createNewRoom(client, roomId)
-		go m.messageWriter(roomId, m.rooms[roomId].Broadcast)
-	}
-
-	m.logger.Infof("new client: '%s', roomId: '%s'", client.Username, roomId)
-	go m.messageReader(client, roomId, m.rooms[roomId].Broadcast)
+func (w WebSocketMessenger) ConnectClient(client *domain.Client) {
+	done := make(chan struct{})
+	go w.messageWriter(client, done)
+	go w.messageReader(client, done)
+	w.logger.Infof("new client: '%s', roomId: '%s'", client.Username, client.RoomId)
 }
 
-func (m WebSocketMessenger) createNewRoom(client *domain.Client, roomId string) {
-	msg := make(chan domain.Message)
-	room := domain.Room{
-		Id:        roomId,
-		Clients:   make(map[domain.Client]bool),
-		Broadcast: msg,
-	}
-	room.Clients[*client] = true
-	m.rooms[roomId] = room
-}
-
-func (m WebSocketMessenger) messageReader(client *domain.Client, roomId string, messages chan<- domain.Message) {
+func (w WebSocketMessenger) messageWriter(client *domain.Client, done chan<- struct{}) {
 	defer func() {
 		_ = client.Conn.Close()
-		delete(m.rooms[roomId].Clients, *client)
-		if len(m.rooms[roomId].Clients) == 0 {
-			delete(m.rooms, roomId)
-			m.logger.Infof("deleted empty room: '%s'", roomId)
-		}
-		m.logger.Infof("closed connection with client: '%s', roomId: '%s'", client.Username, roomId)
+		done <- struct{}{}
+		close(done)
+		w.logger.Infof("closed connection with client: '%s', roomId: '%s'", client.Username, client.RoomId)
 	}()
 
 	for {
 		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
-			m.logger.Debug(err)
 			return
 		}
 
-		messages <- domain.Message{
+		message, err := json.Marshal(domain.Message{
 			Username: client.Username,
 			Text:     string(p),
+		})
+		if err != nil {
+			w.logger.Error(err)
+			return
+		}
+
+		err = w.repo.Publish(client.RoomId, message)
+		if err != nil {
+			w.logger.Error(err)
 		}
 	}
 }
 
-func (m WebSocketMessenger) messageWriter(roomId string, messages <-chan domain.Message) {
+func (w WebSocketMessenger) messageReader(client *domain.Client, done <-chan struct{}) {
+	subscription := w.repo.Subscribe(client.RoomId)
+	defer subscription.Unsubscribe(context.Background(), client.RoomId)
+
 	for {
 		select {
-		case msg := <-messages:
-			for client := range m.rooms[roomId].Clients {
-				js, err := json.Marshal(msg)
-				if err != nil {
-					m.logger.Error(err)
-					return
-				}
-				m.logger.Infof("sending message: '%s' to client: '%s'", js, client.Username)
-
-				err = client.Conn.WriteMessage(1, js)
-				if err != nil {
-					m.logger.Error(err)
-					return
-				}
+		case message := <-subscription.Channel():
+			err := client.Conn.WriteMessage(websocket.TextMessage, []byte(message.Payload))
+			if err != nil {
+				return
 			}
+			w.logger.Infof("sent message: '%s' to client: '%s'", message.Payload, client.Username)
+		case <-done:
+			return
 		}
 	}
 }
