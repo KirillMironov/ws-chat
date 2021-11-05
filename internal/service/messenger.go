@@ -19,16 +19,16 @@ func NewWebSocketMessenger(repo repository.Messages, logger logger.Logger) *WebS
 }
 
 func (w WebSocketMessenger) ConnectClient(client *domain.Client) {
-	closeSignal := make(chan bool)
-	go w.messageWriter(client, closeSignal)
-	go w.messageReader(client, closeSignal)
+	done := make(chan struct{})
+	go w.messageWriter(client, done)
+	go w.messageReader(client, done)
 	w.logger.Infof("new client: '%s', roomId: '%s'", client.Username, client.RoomId)
 }
 
-func (w WebSocketMessenger) messageWriter(client *domain.Client, closeSignal chan<- bool) {
+func (w WebSocketMessenger) messageWriter(client *domain.Client, done chan<- struct{}) {
 	defer func() {
 		_ = client.Conn.Close()
-		closeSignal <- true
+		done <- struct{}{}
 		w.logger.Infof("closed connection with client: '%s', roomId: '%s'", client.Username, client.RoomId)
 	}()
 
@@ -54,7 +54,7 @@ func (w WebSocketMessenger) messageWriter(client *domain.Client, closeSignal cha
 	}
 }
 
-func (w WebSocketMessenger) messageReader(client *domain.Client, closeSignal <-chan bool) {
+func (w WebSocketMessenger) messageReader(client *domain.Client, done <-chan struct{}) {
 	subscription := w.repo.Subscribe(client.RoomId)
 
 	for {
@@ -65,7 +65,7 @@ func (w WebSocketMessenger) messageReader(client *domain.Client, closeSignal <-c
 				return
 			}
 			w.logger.Infof("sent message: '%s' to client: '%s'", message.Payload, client.Username)
-		case <-closeSignal:
+		case <-done:
 			err := subscription.Unsubscribe(context.Background(), client.RoomId)
 			if err != nil {
 				w.logger.Error(err)
