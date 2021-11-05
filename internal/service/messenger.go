@@ -29,6 +29,7 @@ func (w WebSocketMessenger) messageWriter(client *domain.Client, done chan<- str
 	defer func() {
 		_ = client.Conn.Close()
 		done <- struct{}{}
+		close(done)
 		w.logger.Infof("closed connection with client: '%s', roomId: '%s'", client.Username, client.RoomId)
 	}()
 
@@ -56,6 +57,7 @@ func (w WebSocketMessenger) messageWriter(client *domain.Client, done chan<- str
 
 func (w WebSocketMessenger) messageReader(client *domain.Client, done <-chan struct{}) {
 	subscription := w.repo.Subscribe(client.RoomId)
+	defer subscription.Unsubscribe(context.Background(), client.RoomId)
 
 	for {
 		select {
@@ -66,11 +68,7 @@ func (w WebSocketMessenger) messageReader(client *domain.Client, done <-chan str
 			}
 			w.logger.Infof("sent message: '%s' to client: '%s'", message.Payload, client.Username)
 		case <-done:
-			err := subscription.Unsubscribe(context.Background(), client.RoomId)
-			if err != nil {
-				w.logger.Error(err)
-				return
-			}
+			return
 		}
 	}
 }
