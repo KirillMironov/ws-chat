@@ -35,7 +35,6 @@ func (w WebSocketMessenger) messageWriter(client *domain.Client, done chan<- str
 	for {
 		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
-			w.logger.Error(err)
 			return
 		}
 
