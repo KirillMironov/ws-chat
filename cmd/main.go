@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/KirillMironov/ws-chat/config"
 	"github.com/KirillMironov/ws-chat/internal/delivery/v1"
 	redisRepo "github.com/KirillMironov/ws-chat/internal/repository/redis"
@@ -30,6 +31,11 @@ func main() {
 		DB:       cfg.Redis.DB,
 	})
 	defer client.Close()
+
+	err = client.Ping(context.Background()).Err()
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	// App
 	messagesRepo := redisRepo.NewMessagesRepo(client)

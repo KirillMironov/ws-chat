@@ -27,30 +27,32 @@ func (w WebSocketMessenger) ConnectClient(client *domain.Client) {
 
 func (w WebSocketMessenger) messageWriter(client *domain.Client, done chan<- struct{}) {
 	defer func() {
-		_ = client.Conn.Close()
+		client.Conn.Close()
 		done <- struct{}{}
-		close(done)
 		w.logger.Infof("closed connection with client: '%s', roomId: '%s'", client.Username, client.RoomId)
 	}()
 
 	for {
 		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
+			w.logger.Error(err)
 			return
 		}
 
-		message, err := json.Marshal(domain.Message{
-			Username: client.Username,
-			Text:     string(p),
-		})
+		var message = domain.Message{Event: domain.ChatMessage}
+		message.Payload.Username = client.Username
+		message.Payload.Text = string(p)
+
+		js, err := json.Marshal(message)
 		if err != nil {
 			w.logger.Error(err)
 			return
 		}
 
-		err = w.repo.Publish(client.RoomId, message)
+		err = w.repo.Publish(client.RoomId, js)
 		if err != nil {
 			w.logger.Error(err)
+			return
 		}
 	}
 }
