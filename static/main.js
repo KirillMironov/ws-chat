@@ -24,8 +24,8 @@ function connectToRoom() {
 
     socket.onmessage = message => {
         let json = JSON.parse(message.data);
-        if (msg.event === CHAT_MESSAGE) {
-            document.getElementById('messages_area').value += `${msg.payload.username}: ${String(msg.payload.text)}\r\n`
+        if (json.event === CHAT_MESSAGE) {
+            document.getElementById('messages_area').value += `${json.payload.username}: ${String(json.payload.text)}\r\n`
         }
     };
 
