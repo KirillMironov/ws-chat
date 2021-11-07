@@ -11,40 +11,35 @@ import (
 )
 
 const (
-	roomId          = "main"
-	usernameKey     = "username"
-	numberOfMessage = 1000
+	roomId           = "main"
+	usernameKey      = "username"
+	numberOfMessages = 3
 )
 
-var results []interface{}
+var counter int
 
 func TestRedisStreams(t *testing.T) {
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 
-	go func(t *testing.T) {
-		defer wg.Done()
-		err := readFromStream()
+	go func() {
+		err := subscribeToStream(&wg)
 		if err != nil {
 			t.Error(err)
 		}
-	}(t)
-
-	go func(t *testing.T) {
-		defer wg.Done()
-		err := publishToStream()
-		if err != nil {
-			t.Error(err)
-		}
-	}(t)
+	}()
 
 	wg.Wait()
+	err := publishToStream()
+	if err != nil {
+		t.Error(err)
+	}
 
-	assert.Equal(t, 1000, len(results))
+	assert.Equal(t, counter, numberOfMessages)
 }
 
 func publishToStream() error {
-	for i := 0; i < numberOfMessage; i++ {
+	for i := 0; i < numberOfMessages; i++ {
 		err := client.XAdd(context.Background(), &redis.XAddArgs{
 			Stream: roomId,
 			Values: map[string]interface{}{usernameKey: strconv.Itoa(i)},
@@ -56,8 +51,9 @@ func publishToStream() error {
 	return nil
 }
 
-func readFromStream() error {
+func subscribeToStream(wg *sync.WaitGroup) error {
 	client.XGroupCreate(context.Background(), roomId, roomId, "0")
+	wg.Done()
 
 	for {
 		result, err := client.XReadGroup(context.Background(), &redis.XReadGroupArgs{
@@ -69,11 +65,8 @@ func readFromStream() error {
 			return err
 		}
 
-		if result != nil {
-			results = append(results, result[0].Messages[0].Values[usernameKey])
-		}
-
-		if result[0].Messages[0].Values[usernameKey] == strconv.Itoa(numberOfMessage-1) {
+		counter++
+		if result[0].Messages[0].Values[usernameKey] == strconv.Itoa(numberOfMessages-1) {
 			return nil
 		}
 	}
