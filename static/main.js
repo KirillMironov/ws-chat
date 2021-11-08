@@ -1,48 +1,58 @@
-const GREEN_CIRCLE_EMOJI = "&#128994;";
+const GREEN_CIRCLE_EMOJI = '&#128994;';
+const CHAT_MESSAGE = 'chat-message';
+const CLIENTS_COUNTER = 'active-clients-counter';
 
 let socket;
 
 function connectToRoom() {
     if (socket != null) {
         socket.close();
-        document.getElementById("messages_area").value = "";
+        document.getElementById('messages_area').value = '';
     }
 
-    socket = new WebSocket("ws://localhost:8080/connectToRoom" +
-        "?username="
-        + document.getElementById("username").value
-        + "&roomId="
-        + document.getElementById("room_id").value);
+    socket = new WebSocket('ws://localhost:8080/connectToRoom' +
+        '?username='
+        + document.getElementById('username').value
+        + '&roomId='
+        + document.getElementById('room_id').value);
 
-    console.log("Attempting Connection...");
+    console.log('Attempting Connection...');
 
     socket.onopen = () => {
-        console.log("Successfully Connected");
-        document.getElementById("connection_status").innerHTML = GREEN_CIRCLE_EMOJI;
+        console.log('Successfully Connected');
+        document.getElementById('connection_status').innerHTML = GREEN_CIRCLE_EMOJI;
     };
 
     socket.onmessage = message => {
-        document.getElementById("messages_area").value += message.data + "\r\n";
+        let json = JSON.parse(message.data);
+
+        switch (json.event) {
+            case CHAT_MESSAGE:
+                document.getElementById('messages_area').value += `${json.payload.username}: ${String(json.payload.text)}\r\n`;
+                break;
+            case CLIENTS_COUNTER:
+                document.getElementById('clients_counter').innerHTML = `${json.payload.text}`;
+        }
     };
 
     socket.onclose = event => {
-        console.log("Socket Closed Connection: ", event);
-        document.getElementById("connection_status").innerHTML = event.type.toString();
+        console.log('Socket Closed Connection: ', event);
+        document.getElementById('connection_status').innerHTML = event.type.toString();
     };
 
     socket.onerror = error => {
-        console.log("Socket Error: ", error);
-        document.getElementById("connection_status").innerHTML = error.type.toString();
+        console.log('Socket Error: ', error);
+        document.getElementById('connection_status').innerHTML = error.type.toString();
     };
 }
 
 function sendMessage() {
-    let message = document.getElementById("message_input").value.toString();
+    let message = document.getElementById('message_input').value.toString();
 
-    if (socket == null || message === "") {
+    if (socket == null || message === '') {
         return;
     }
 
     socket.send(message);
-    document.getElementById("message_input").value = "";
+    document.getElementById('message_input').value = '';
 }
