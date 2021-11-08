@@ -1,6 +1,6 @@
 package domain
 
 const (
-	ChatMessage        = "chat-message"
-	ActiveUsersCounter = "active-users-counter"
+	ChatMessage          = "chat-message"
+	ActiveClientsCounter = "active-clients-counter"
 )

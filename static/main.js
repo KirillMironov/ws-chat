@@ -1,6 +1,6 @@
 const GREEN_CIRCLE_EMOJI = '&#128994;';
 const CHAT_MESSAGE = 'chat-message';
-const CLIENTS_COUNTER = 'active-users-counter';
+const CLIENTS_COUNTER = 'active-clients-counter';
 
 let socket;
 

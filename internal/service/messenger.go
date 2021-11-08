@@ -51,7 +51,7 @@ func (w WebSocketMessenger) publishActiveUsers(client *domain.Client) {
 		return
 	}
 
-	var message = domain.Message{Event: domain.ActiveUsersCounter}
+	var message = domain.Message{Event: domain.ActiveClientsCounter}
 	message.Payload.Text = users
 
 	js, err := json.Marshal(message)
