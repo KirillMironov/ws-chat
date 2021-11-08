@@ -1,8 +1,15 @@
 package repository
 
-import "github.com/go-redis/redis/v8"
+import (
+	"github.com/go-redis/redis/v8"
+)
 
 type Messages interface {
-	Publish(roomId string, message []byte) error
-	Subscribe(roomId string) *redis.PubSub
+	PublishMessage(roomId string, message []byte) error
+	SubscribeToMessages(roomId string) *redis.PubSub
+	AddActiveUser(roomId, username string) error
+	RemoveActiveUser(roomId, username string) error
+	GetActiveUsers(roomId string) ([]string, error)
+	PublishActiveUsers(roomId string, message []byte) error
+	SubscribeToActiveUsers(roomId string) *redis.PubSub
 }
