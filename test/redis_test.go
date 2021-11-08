@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	keyPostfix = ":activeUsers"
+	keyPostfix = ":activeClients"
 	roomId     = "main"
 	username   = "Lisa"
 )
