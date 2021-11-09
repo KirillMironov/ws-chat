@@ -10,12 +10,12 @@ import (
 )
 
 type Handler struct {
-	messengerService service.Messenger
-	logger           logger.Logger
+	clientsService service.Clients
+	logger         logger.Logger
 }
 
-func NewHandler(messengerService service.Messenger, logger logger.Logger) *Handler {
-	return &Handler{messengerService: messengerService, logger: logger}
+func NewHandler(clientsService service.Clients, logger logger.Logger) *Handler {
+	return &Handler{clientsService: clientsService, logger: logger}
 }
 
 var upgrader = websocket.Upgrader{
@@ -58,5 +58,5 @@ func (h *Handler) connectToRoom(c *gin.Context) {
 		Conn:     ws,
 	}
 
-	h.messengerService.ConnectClient(client)
+	h.clientsService.ConnectClient(client)
 }
