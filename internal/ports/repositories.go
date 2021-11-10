@@ -1,10 +1,10 @@
-package repository
+package ports
 
 import (
 	"github.com/go-redis/redis/v8"
 )
 
-type Clients interface {
+type ClientsRepository interface {
 	PublishActiveClients(roomId string, message []byte) error
 	SubscribeToActiveClients(roomId string) *redis.PubSub
 	AddActiveClient(roomId, username string) error
@@ -12,7 +12,7 @@ type Clients interface {
 	GetActiveClients(roomId string) ([]string, error)
 }
 
-type Messages interface {
+type MessagesRepository interface {
 	PublishMessage(roomId string, message []byte) error
 	SubscribeToMessages(roomId string) *redis.PubSub
 }

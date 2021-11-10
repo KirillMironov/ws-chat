@@ -4,20 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/KirillMironov/ws-chat/domain"
-	"github.com/KirillMironov/ws-chat/internal/repository"
-	"github.com/KirillMironov/ws-chat/pkg/logger"
+	"github.com/KirillMironov/ws-chat/internal/ports"
 	"github.com/gorilla/websocket"
 	"sync"
 )
 
 type MessagesService struct {
-	clientsRepo  repository.Clients
-	messagesRepo repository.Messages
-	logger       logger.Logger
+	clientsRepo  ports.ClientsRepository
+	messagesRepo ports.MessagesRepository
+	logger       ports.Logger
 }
 
-func NewMessagesService(clientsRepo repository.Clients, messagesRepo repository.Messages,
-	logger logger.Logger) *MessagesService {
+func NewMessagesService(clientsRepo ports.ClientsRepository, messagesRepo ports.MessagesRepository,
+	logger ports.Logger) *MessagesService {
 	return &MessagesService{clientsRepo: clientsRepo, messagesRepo: messagesRepo, logger: logger}
 }
 

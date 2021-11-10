@@ -2,19 +2,18 @@ package v1
 
 import (
 	"github.com/KirillMironov/ws-chat/domain"
-	"github.com/KirillMironov/ws-chat/internal/service"
-	"github.com/KirillMironov/ws-chat/pkg/logger"
+	"github.com/KirillMironov/ws-chat/internal/ports"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"net/http"
 )
 
 type Handler struct {
-	clientsService service.Clients
-	logger         logger.Logger
+	clientsService ports.ClientsService
+	logger         ports.Logger
 }
 
-func NewHandler(clientsService service.Clients, logger logger.Logger) *Handler {
+func NewHandler(clientsService ports.ClientsService, logger ports.Logger) *Handler {
 	return &Handler{clientsService: clientsService, logger: logger}
 }
 
