@@ -5,8 +5,6 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-const activeClientsPostfix = ":activeClients"
-
 type MessagesRepository struct {
 	client *redis.Client
 }
