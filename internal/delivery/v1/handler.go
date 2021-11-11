@@ -20,7 +20,6 @@ func NewHandler(clientsService ports.ClientsService, logger ports.Logger) *Handl
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
@@ -57,5 +56,5 @@ func (h *Handler) connectToRoom(c *gin.Context) {
 		Conn:     ws,
 	}
 
-	h.clientsService.ConnectClient(client)
+	h.clientsService.Connect(client)
 }

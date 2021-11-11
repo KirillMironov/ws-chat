@@ -20,7 +20,7 @@ func NewMessagesService(clientsRepo ports.ClientsRepository, messagesRepo ports.
 	return &MessagesService{clientsRepo: clientsRepo, messagesRepo: messagesRepo, logger: logger}
 }
 
-func (m MessagesService) MessageWriter(client *domain.Client) {
+func (m MessagesService) Reader(client *domain.Client) {
 	for {
 		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
@@ -37,7 +37,7 @@ func (m MessagesService) MessageWriter(client *domain.Client) {
 			return
 		}
 
-		err = m.messagesRepo.PublishMessage(client.RoomId, js)
+		err = m.messagesRepo.Publish(client.RoomId, js)
 		if err != nil {
 			m.logger.Error(err)
 			return
@@ -45,10 +45,10 @@ func (m MessagesService) MessageWriter(client *domain.Client) {
 	}
 }
 
-func (m MessagesService) MessageReader(client *domain.Client, done <-chan struct{}, wg *sync.WaitGroup) {
-	messagesSubscription := m.messagesRepo.SubscribeToMessages(client.RoomId)
+func (m MessagesService) Writer(client *domain.Client, done <-chan struct{}, wg *sync.WaitGroup) {
+	messagesSubscription := m.messagesRepo.Subscribe(client.RoomId)
 	defer messagesSubscription.Unsubscribe(context.Background())
-	activeClientsSubscription := m.clientsRepo.SubscribeToActiveClients(client.RoomId)
+	activeClientsSubscription := m.clientsRepo.Subscribe(client.RoomId)
 	defer activeClientsSubscription.Unsubscribe(context.Background())
 	wg.Done()
 

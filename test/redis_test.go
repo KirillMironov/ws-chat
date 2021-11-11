@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	keyPostfix = ":activeClients"
 	roomId     = "main"
 	username   = "Lisa"
+	keyPostfix = ":connectedClients"
 )
 
 func TestAddActiveUser(t *testing.T) {

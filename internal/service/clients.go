@@ -18,11 +18,11 @@ func NewClientsService(repo ports.ClientsRepository, messagesService ports.Messa
 	return &ClientsService{repo: repo, messagesService: messagesService, logger: logger}
 }
 
-func (c ClientsService) ConnectClient(client *domain.Client) {
+func (c ClientsService) Connect(client *domain.Client) {
 	done := make(chan struct{})
-	defer c.DisconnectClient(client, done)
+	defer c.Disconnect(client, done)
 
-	err := c.repo.AddActiveClient(client.RoomId, client.Username)
+	err := c.repo.Add(client.RoomId, client.Username)
 	if err != nil {
 		c.logger.Error(err)
 		return
@@ -30,28 +30,28 @@ func (c ClientsService) ConnectClient(client *domain.Client) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go c.messagesService.MessageReader(client, done, &wg)
+	go c.messagesService.Writer(client, done, &wg)
 	wg.Wait()
 
-	c.UpdateActiveClients(client)
-	c.messagesService.MessageWriter(client)
+	c.UpdateConnected(client)
+	c.messagesService.Reader(client)
 
 	c.logger.Infof("new client: '%s', roomId: '%s'", client.Username, client.RoomId)
 }
 
-func (c ClientsService) DisconnectClient(client *domain.Client, done chan<- struct{}) {
+func (c ClientsService) Disconnect(client *domain.Client, done chan<- struct{}) {
 	client.Conn.Close()
 	done <- struct{}{}
-	err := c.repo.RemoveActiveClient(client.RoomId, client.Username)
+	err := c.repo.Remove(client.RoomId, client.Username)
 	if err != nil {
 		c.logger.Error(err)
 	}
-	c.UpdateActiveClients(client)
+	c.UpdateConnected(client)
 	c.logger.Infof("closed connection with client: '%s', roomId: '%s'", client.Username, client.RoomId)
 }
 
-func (c ClientsService) UpdateActiveClients(client *domain.Client) {
-	clients, err := c.repo.GetActiveClients(client.RoomId)
+func (c ClientsService) UpdateConnected(client *domain.Client) {
+	clients, err := c.repo.GetConnected(client.RoomId)
 	if err != nil {
 		c.logger.Error(err)
 		return
@@ -66,7 +66,7 @@ func (c ClientsService) UpdateActiveClients(client *domain.Client) {
 		return
 	}
 
-	err = c.repo.PublishActiveClients(client.RoomId, js)
+	err = c.repo.Publish(client.RoomId, js)
 	if err != nil {
 		c.logger.Error(err)
 		return
