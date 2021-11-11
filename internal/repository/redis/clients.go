@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -15,22 +16,22 @@ func NewClientsRepository(client *redis.Client) *ClientsRepository {
 
 const connectedClientsPostfix = ":connectedClients"
 
-func (c ClientsRepository) Publish(roomId string, message []byte) error {
-	return c.client.Publish(context.Background(), roomId+connectedClientsPostfix, message).Err()
+func (c ClientsRepository) Publish(client *domain.Client, message []byte) error {
+	return c.client.Publish(context.Background(), client.RoomId+connectedClientsPostfix, message).Err()
 }
 
-func (c ClientsRepository) Subscribe(roomId string) *redis.PubSub {
-	return c.client.Subscribe(context.Background(), roomId+connectedClientsPostfix)
+func (c ClientsRepository) Subscribe(client *domain.Client) *redis.PubSub {
+	return c.client.Subscribe(context.Background(), client.RoomId+connectedClientsPostfix)
 }
 
-func (c ClientsRepository) Add(roomId, username string) error {
-	return c.client.SAdd(context.Background(), roomId+connectedClientsPostfix, username).Err()
+func (c ClientsRepository) Add(client *domain.Client) error {
+	return c.client.SAdd(context.Background(), client.RoomId+connectedClientsPostfix, client.Username).Err()
 }
 
-func (c ClientsRepository) Remove(roomId, username string) error {
-	return c.client.SRem(context.Background(), roomId+connectedClientsPostfix, username).Err()
+func (c ClientsRepository) Remove(client *domain.Client) error {
+	return c.client.SRem(context.Background(), client.RoomId+connectedClientsPostfix, client.Username).Err()
 }
 
-func (c ClientsRepository) GetConnected(roomId string) ([]string, error) {
-	return c.client.SMembers(context.Background(), roomId+connectedClientsPostfix).Result()
+func (c ClientsRepository) GetConnected(client *domain.Client) ([]string, error) {
+	return c.client.SMembers(context.Background(), client.RoomId+connectedClientsPostfix).Result()
 }

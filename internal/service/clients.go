@@ -22,7 +22,7 @@ func (c ClientsService) Connect(client *domain.Client) {
 	done := make(chan struct{})
 	defer c.Disconnect(client, done)
 
-	err := c.repo.Add(client.RoomId, client.Username)
+	err := c.repo.Add(client)
 	if err != nil {
 		c.logger.Error(err)
 		return
@@ -42,7 +42,7 @@ func (c ClientsService) Connect(client *domain.Client) {
 func (c ClientsService) Disconnect(client *domain.Client, done chan<- struct{}) {
 	client.Conn.Close()
 	done <- struct{}{}
-	err := c.repo.Remove(client.RoomId, client.Username)
+	err := c.repo.Remove(client)
 	if err != nil {
 		c.logger.Error(err)
 	}
@@ -51,7 +51,7 @@ func (c ClientsService) Disconnect(client *domain.Client, done chan<- struct{}) 
 }
 
 func (c ClientsService) UpdateConnected(client *domain.Client) {
-	clients, err := c.repo.GetConnected(client.RoomId)
+	clients, err := c.repo.GetConnected(client)
 	if err != nil {
 		c.logger.Error(err)
 		return
@@ -66,7 +66,7 @@ func (c ClientsService) UpdateConnected(client *domain.Client) {
 		return
 	}
 
-	err = c.repo.Publish(client.RoomId, js)
+	err = c.repo.Publish(client, js)
 	if err != nil {
 		c.logger.Error(err)
 		return
