@@ -37,7 +37,7 @@ func (m MessagesService) Reader(client *domain.Client) {
 			return
 		}
 
-		err = m.messagesRepo.Publish(client.RoomId, js)
+		err = m.messagesRepo.Publish(client, js)
 		if err != nil {
 			m.logger.Error(err)
 			return
@@ -46,9 +46,9 @@ func (m MessagesService) Reader(client *domain.Client) {
 }
 
 func (m MessagesService) Writer(client *domain.Client, done <-chan struct{}, wg *sync.WaitGroup) {
-	messagesSubscription := m.messagesRepo.Subscribe(client.RoomId)
+	messagesSubscription := m.messagesRepo.Subscribe(client)
 	defer messagesSubscription.Unsubscribe(context.Background())
-	activeClientsSubscription := m.clientsRepo.Subscribe(client.RoomId)
+	activeClientsSubscription := m.clientsRepo.Subscribe(client)
 	defer activeClientsSubscription.Unsubscribe(context.Background())
 	wg.Done()
 
