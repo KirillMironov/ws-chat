@@ -6,7 +6,6 @@ import (
 	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/KirillMironov/ws-chat/internal/ports"
 	"github.com/gorilla/websocket"
-	"sync"
 )
 
 type MessagesService struct {
@@ -45,12 +44,12 @@ func (m MessagesService) Reader(client *domain.Client) {
 	}
 }
 
-func (m MessagesService) Writer(client *domain.Client, done <-chan struct{}, wg *sync.WaitGroup) {
+func (m MessagesService) Writer(client *domain.Client, done chan struct{}) {
 	messagesSubscription := m.messagesRepo.Subscribe(client)
 	defer messagesSubscription.Unsubscribe(context.Background())
 	activeClientsSubscription := m.clientsRepo.Subscribe(client)
 	defer activeClientsSubscription.Unsubscribe(context.Background())
-	wg.Done()
+	done <- struct{}{}
 
 	for {
 		select {

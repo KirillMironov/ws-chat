@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/KirillMironov/ws-chat/internal/ports"
-	"sync"
 )
 
 type ClientsService struct {
@@ -28,10 +27,8 @@ func (c ClientsService) Connect(client *domain.Client) {
 		return
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go c.messagesService.Writer(client, done, &wg)
-	wg.Wait()
+	go c.messagesService.Writer(client, done)
+	<-done
 
 	c.UpdateConnected(client)
 	c.messagesService.Reader(client)

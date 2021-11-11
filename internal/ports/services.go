@@ -2,7 +2,6 @@ package ports
 
 import (
 	"github.com/KirillMironov/ws-chat/domain"
-	"sync"
 )
 
 type ClientsService interface {
@@ -13,5 +12,5 @@ type ClientsService interface {
 
 type MessagesService interface {
 	Reader(client *domain.Client)
-	Writer(client *domain.Client, done <-chan struct{}, wg *sync.WaitGroup)
+	Writer(client *domain.Client, done chan struct{})
 }
