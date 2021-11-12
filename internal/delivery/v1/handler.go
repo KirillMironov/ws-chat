@@ -2,26 +2,24 @@ package v1
 
 import (
 	"github.com/KirillMironov/ws-chat/domain"
-	"github.com/KirillMironov/ws-chat/internal/service"
-	"github.com/KirillMironov/ws-chat/pkg/logger"
+	"github.com/KirillMironov/ws-chat/internal/ports"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"net/http"
 )
 
 type Handler struct {
-	messengerService service.Messenger
-	logger           logger.Logger
+	clientsService ports.ClientsService
+	logger         ports.Logger
 }
 
-func NewHandler(messengerService service.Messenger, logger logger.Logger) *Handler {
-	return &Handler{messengerService: messengerService, logger: logger}
+func NewHandler(clientsService ports.ClientsService, logger ports.Logger) *Handler {
+	return &Handler{clientsService: clientsService, logger: logger}
 }
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
@@ -58,5 +56,5 @@ func (h *Handler) connectToRoom(c *gin.Context) {
 		Conn:     ws,
 	}
 
-	h.messengerService.ConnectClient(client)
+	h.clientsService.Connect(client)
 }

@@ -10,7 +10,6 @@ import (
 var client *redis.Client
 
 func TestMain(m *testing.M) {
-	// Redis
 	client = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",
