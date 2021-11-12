@@ -1,6 +1,6 @@
 const GREEN_CIRCLE_EMOJI = '&#128994;';
 const CHAT_MESSAGE = 'chat-message';
-const ACTIVE_CLIENTS = 'active-clients';
+const CONNECTED_CLIENTS = 'connected-clients';
 
 let socket;
 
@@ -30,7 +30,7 @@ function connectToRoom() {
             case CHAT_MESSAGE:
                 document.getElementById('messages_area').value += `${json.payload.username}: ${String(json.payload.text)}\r\n`;
                 break;
-            case ACTIVE_CLIENTS:
+            case CONNECTED_CLIENTS:
                 document.getElementById('active_clients').innerHTML = `${json.payload.text}`;
         }
     };
