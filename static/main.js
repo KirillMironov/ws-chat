@@ -4,13 +4,13 @@ const CONNECTED_CLIENTS = 'connected-clients';
 
 let socket;
 
-function connectToRoom() {
+function connect() {
     if (socket != null) {
         socket.close();
         document.getElementById('messages_area').value = '';
     }
 
-    socket = new WebSocket('ws://localhost:8080/connectToRoom' +
+    socket = new WebSocket('ws://localhost:8080/connect' +
         '?username='
         + document.getElementById('username').value
         + '&roomId='

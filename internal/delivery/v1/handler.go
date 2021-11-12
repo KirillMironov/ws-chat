@@ -30,11 +30,11 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
-	r.GET("/connectToRoom", h.connectToRoom)
+	r.GET("/connect", h.connect)
 	return r
 }
 
-func (h *Handler) connectToRoom(c *gin.Context) {
+func (h *Handler) connect(c *gin.Context) {
 	username := c.Query("username")
 	roomId := c.Query("roomId")
 	if len(username) == 0 || len(roomId) == 0 {
