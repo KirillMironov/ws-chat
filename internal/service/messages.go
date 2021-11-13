@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/KirillMironov/ws-chat/internal/ports"
@@ -46,9 +45,9 @@ func (m MessagesService) Reader(client *domain.Client) {
 
 func (m MessagesService) Writer(client *domain.Client, done chan struct{}) {
 	messagesSubscription := m.messagesRepo.Subscribe(client)
-	defer messagesSubscription.Unsubscribe(context.Background())
+	defer messagesSubscription.Close()
 	activeClientsSubscription := m.clientsRepo.Subscribe(client)
-	defer activeClientsSubscription.Unsubscribe(context.Background())
+	defer activeClientsSubscription.Close()
 	done <- struct{}{}
 
 	for {

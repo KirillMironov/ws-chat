@@ -64,7 +64,7 @@ func TestSubscribeToActiveUsers(t *testing.T) {
 	t.Skip()
 
 	subscription := client.Subscribe(context.Background(), roomId+keyPostfix)
-	defer subscription.Unsubscribe(context.Background(), roomId+keyPostfix)
+	defer subscription.Close()
 
 	for msg := range subscription.Channel() {
 		log.Println(msg)
