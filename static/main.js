@@ -1,16 +1,16 @@
 const GREEN_CIRCLE_EMOJI = '&#128994;';
 const CHAT_MESSAGE = 'chat-message';
-const ACTIVE_CLIENTS = 'active-clients';
+const CONNECTED_CLIENTS = 'connected-clients';
 
 let socket;
 
-function connectToRoom() {
+function connect() {
     if (socket != null) {
         socket.close();
         document.getElementById('messages_area').value = '';
     }
 
-    socket = new WebSocket('ws://localhost:8080/connectToRoom' +
+    socket = new WebSocket('ws://localhost:8080/connect' +
         '?username='
         + document.getElementById('username').value
         + '&roomId='
@@ -30,7 +30,7 @@ function connectToRoom() {
             case CHAT_MESSAGE:
                 document.getElementById('messages_area').value += `${json.payload.username}: ${String(json.payload.text)}\r\n`;
                 break;
-            case ACTIVE_CLIENTS:
+            case CONNECTED_CLIENTS:
                 document.getElementById('active_clients').innerHTML = `${json.payload.text}`;
         }
     };

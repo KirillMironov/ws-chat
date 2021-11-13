@@ -54,7 +54,7 @@ func (c ClientsService) UpdateConnected(client *domain.Client) {
 		return
 	}
 
-	var message = domain.Message{Event: domain.ActiveClients}
+	var message = domain.Message{Event: domain.ConnectedClients}
 	message.Payload.Text = clients
 
 	js, err := json.Marshal(message)
