@@ -27,13 +27,13 @@ func (c ClientsService) Connect(client *domain.Client) {
 		return
 	}
 
+	c.logger.Infof("new client: '%s', roomId: '%s'", client.Username, client.RoomId)
+
 	go c.messagesService.Writer(client, done)
 	<-done
 
 	c.UpdateConnected(client)
 	c.messagesService.Reader(client)
-
-	c.logger.Infof("new client: '%s', roomId: '%s'", client.Username, client.RoomId)
 }
 
 func (c ClientsService) Disconnect(client *domain.Client, done chan<- struct{}) {

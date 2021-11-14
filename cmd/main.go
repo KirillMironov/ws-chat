@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"github.com/KirillMironov/ws-chat/config"
-	"github.com/KirillMironov/ws-chat/internal/delivery/v1"
-	_repo "github.com/KirillMironov/ws-chat/internal/repository/redis"
+	"github.com/KirillMironov/ws-chat/internal/delivery"
+	repository "github.com/KirillMironov/ws-chat/internal/repository/redis"
 	"github.com/KirillMironov/ws-chat/internal/service"
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
+	"net/http"
 )
 
 func main() {
@@ -38,12 +39,12 @@ func main() {
 	}
 
 	// App
-	clientsRepo := _repo.NewClientsRepository(client)
-	messagesRepo := _repo.NewMessagesRepository(client)
+	clientsRepo := repository.NewClientsRepository(client)
+	messagesRepo := repository.NewMessagesRepository(client)
 	messagesService := service.NewMessagesService(clientsRepo, messagesRepo, logger)
 	clientsService := service.NewClientsService(clientsRepo, messagesService, logger)
-	handler := v1.NewHandler(clientsService, logger)
+	delivery.NewHandler(clientsService, logger).InitRoutes()
 
 	logger.Infof("started on port %s", cfg.Port)
-	logger.Fatal(handler.InitRoutes().Run(":" + cfg.Port))
+	logger.Fatal(http.ListenAndServe(":"+cfg.Port, http.DefaultServeMux))
 }
