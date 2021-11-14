@@ -1,9 +1,8 @@
-package v1
+package delivery
 
 import (
 	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/KirillMironov/ws-chat/internal/ports"
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"net/http"
 )
@@ -22,30 +21,23 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func (h *Handler) InitRoutes() *gin.Engine {
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
-	r.Static("/static", "./static")
-	r.LoadHTMLGlob("static/index.html")
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", nil)
-	})
-	r.GET("/connect", h.connect)
-	return r
+func (h *Handler) InitRoutes() {
+	http.Handle("/", http.FileServer(http.Dir("./static")))
+	http.HandleFunc("/connect", h.connect)
 }
 
-func (h *Handler) connect(c *gin.Context) {
-	username := c.Query("username")
-	roomId := c.Query("roomId")
+func (h *Handler) connect(w http.ResponseWriter, r *http.Request) {
+	username := r.URL.Query().Get("username")
+	roomId := r.URL.Query().Get("roomId")
 	if len(username) == 0 || len(roomId) == 0 {
-		c.Status(http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		h.logger.Info("not enough query params")
 		return
 	}
 
-	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		h.logger.Error(err)
 		return
 	}

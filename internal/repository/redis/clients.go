@@ -6,6 +6,8 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+const connectedClientsPostfix = ":connectedClients"
+
 type ClientsRepository struct {
 	client *redis.Client
 }
@@ -13,8 +15,6 @@ type ClientsRepository struct {
 func NewClientsRepository(client *redis.Client) *ClientsRepository {
 	return &ClientsRepository{client: client}
 }
-
-const connectedClientsPostfix = ":connectedClients"
 
 func (c ClientsRepository) Publish(client *domain.Client, message []byte) error {
 	return c.client.Publish(context.Background(), client.RoomId+connectedClientsPostfix, message).Err()
