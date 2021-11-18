@@ -22,7 +22,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func (h *Handler) InitRoutes() {
-	http.Handle("/", http.FileServer(http.Dir("./static")))
+	http.Handle("/", http.FileServer(http.Dir("../static")))
 	http.HandleFunc("/connect", h.connect)
 }
 
