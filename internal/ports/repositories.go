@@ -6,14 +6,12 @@ import (
 )
 
 type ClientsRepository interface {
-	Publish(client *domain.Client, message []byte) error
-	Subscribe(client *domain.Client) *redis.PubSub
 	Add(client *domain.Client) error
 	Remove(client *domain.Client) error
-	GetConnected(client *domain.Client) ([]string, error)
+	Publish(roomId string) error
 }
 
 type MessagesRepository interface {
 	Publish(client *domain.Client, message []byte) error
-	Subscribe(client *domain.Client) *redis.PubSub
+	Subscribe(roomId string) *redis.PubSub
 }
