@@ -2,11 +2,12 @@ package redis
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/KirillMironov/ws-chat/domain"
 	"github.com/go-redis/redis/v8"
 )
 
-const connectedClientsPostfix = ":connectedClients"
+const keyPostfix = "clients"
 
 type ClientsRepository struct {
 	client *redis.Client
@@ -16,22 +17,37 @@ func NewClientsRepository(client *redis.Client) *ClientsRepository {
 	return &ClientsRepository{client: client}
 }
 
-func (c ClientsRepository) Publish(client *domain.Client, message []byte) error {
-	return c.client.Publish(context.Background(), client.RoomId+connectedClientsPostfix, message).Err()
-}
-
-func (c ClientsRepository) Subscribe(client *domain.Client) *redis.PubSub {
-	return c.client.Subscribe(context.Background(), client.RoomId+connectedClientsPostfix)
-}
-
 func (c ClientsRepository) Add(client *domain.Client) error {
-	return c.client.SAdd(context.Background(), client.RoomId+connectedClientsPostfix, client.Username).Err()
+	err := c.client.SAdd(context.Background(), client.RoomId+keyPostfix, client.Username).Err()
+	if err != nil {
+		return err
+	}
+
+	return c.Publish(client.RoomId)
 }
 
 func (c ClientsRepository) Remove(client *domain.Client) error {
-	return c.client.SRem(context.Background(), client.RoomId+connectedClientsPostfix, client.Username).Err()
+	err := c.client.SRem(context.Background(), client.RoomId+keyPostfix, client.Username).Err()
+	if err != nil {
+		return err
+	}
+
+	return c.Publish(client.RoomId)
 }
 
-func (c ClientsRepository) GetConnected(client *domain.Client) ([]string, error) {
-	return c.client.SMembers(context.Background(), client.RoomId+connectedClientsPostfix).Result()
+func (c ClientsRepository) Publish(roomId string) error {
+	clients, err := c.client.SMembers(context.Background(), roomId+keyPostfix).Result()
+	if err != nil {
+		return err
+	}
+
+	var message = domain.Message{Event: domain.ConnectedClients}
+	message.Payload.Text = clients
+
+	encoded, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
+	return c.client.Publish(context.Background(), roomId, encoded).Err()
 }

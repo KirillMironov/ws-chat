@@ -10,7 +10,7 @@ import (
 const (
 	roomId     = "main"
 	username   = "Lisa"
-	keyPostfix = ":connectedClients"
+	keyPostfix = ":clients"
 )
 
 func TestAddActiveUser(t *testing.T) {
@@ -63,7 +63,7 @@ func TestPublishActiveUsers(t *testing.T) {
 func TestSubscribeToActiveUsers(t *testing.T) {
 	t.Skip()
 
-	subscription := client.Subscribe(context.Background(), roomId+keyPostfix)
+	subscription := client.Subscribe(context.Background(), roomId)
 	defer subscription.Close()
 
 	for msg := range subscription.Channel() {

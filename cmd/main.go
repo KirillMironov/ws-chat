@@ -14,10 +14,10 @@ import (
 func main() {
 	// Logger
 	logger := logrus.New()
-	customFormatter := new(logrus.TextFormatter)
-	customFormatter.TimestampFormat = "2006-01-02 15:04:05.000"
-	customFormatter.FullTimestamp = true
-	logger.SetFormatter(customFormatter)
+	logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05.000",
+	})
 
 	// Config
 	cfg, err := config.InitConfig()
@@ -39,10 +39,10 @@ func main() {
 	}
 
 	// App
-	clientsRepo := repository.NewClientsRepository(client)
-	messagesRepo := repository.NewMessagesRepository(client)
-	messagesService := service.NewMessagesService(clientsRepo, messagesRepo, logger)
-	clientsService := service.NewClientsService(clientsRepo, messagesService, logger)
+	clientsRepository := repository.NewClientsRepository(client)
+	messagesRepository := repository.NewMessagesRepository(client)
+	messagesService := service.NewMessagesService(messagesRepository, logger)
+	clientsService := service.NewClientsService(clientsRepository, messagesService, logger)
 	delivery.NewHandler(clientsService, logger).InitRoutes()
 
 	logger.Infof("started on port %s", cfg.Port)
