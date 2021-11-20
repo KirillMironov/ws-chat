@@ -15,10 +15,10 @@ func NewMessagesRepository(client *redis.Client) *MessagesRepository {
 	return &MessagesRepository{client: client}
 }
 
-func (m MessagesRepository) Publish(client *domain.Client, msg []byte) error {
+func (m MessagesRepository) Publish(client *domain.Client, msg string) error {
 	var message = domain.Message{Event: domain.ChatMessage}
 	message.Payload.Username = client.Username
-	message.Payload.Text = string(msg)
+	message.Payload.Text = msg
 
 	encoded, err := json.Marshal(message)
 	if err != nil {

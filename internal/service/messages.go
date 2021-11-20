@@ -22,7 +22,7 @@ func (m MessagesService) Reader(client *domain.Client) {
 			return
 		}
 
-		err = m.messagesRepo.Publish(client, p)
+		err = m.messagesRepo.Publish(client, string(p))
 		if err != nil {
 			m.logger.Error(err)
 			return
