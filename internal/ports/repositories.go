@@ -12,5 +12,5 @@ type ClientsRepository interface {
 
 type MessagesRepository interface {
 	Publish(client *domain.Client, message string) error
-	Publish(roomId string) error
+	Subscribe(roomId string) *redis.PubSub
 }
