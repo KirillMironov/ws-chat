@@ -39,8 +39,8 @@ func main() {
 	}
 
 	// App
-	clientsRepository := repository.NewClientsRepository(client)
 	messagesRepository := repository.NewMessagesRepository(client)
+	clientsRepository := repository.NewClientsRepository(client)
 	messagesService := service.NewMessagesService(messagesRepository, logger)
 	clientsService := service.NewClientsService(clientsRepository, messagesService, logger)
 	delivery.NewHandler(clientsService, logger).InitRoutes()

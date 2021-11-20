@@ -18,9 +18,9 @@ func NewClientsService(repository ports.ClientsRepository, messagesService ports
 
 func (c ClientsService) Connect(client *domain.Client) {
 	done := make(chan struct{})
-	go c.messagesService.Writer(client, done)
 	defer c.Disconnect(client, done)
 
+	go c.messagesService.Writer(client, done)
 	<-done
 
 	err := c.repository.Add(client)

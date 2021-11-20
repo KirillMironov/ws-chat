@@ -29,7 +29,7 @@ func (h *Handler) InitRoutes() {
 func (h *Handler) connect(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 	roomId := r.URL.Query().Get("roomId")
-	if len(username) == 0 || len(roomId) == 0 {
+	if username == "" || roomId == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		h.logger.Info("not enough query params")
 		return

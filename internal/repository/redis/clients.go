@@ -23,7 +23,7 @@ func (c ClientsRepository) Add(client *domain.Client) error {
 		return err
 	}
 
-	return c.Publish(client.RoomId)
+	return c.publish(client.RoomId)
 }
 
 func (c ClientsRepository) Remove(client *domain.Client) error {
@@ -32,10 +32,10 @@ func (c ClientsRepository) Remove(client *domain.Client) error {
 		return err
 	}
 
-	return c.Publish(client.RoomId)
+	return c.publish(client.RoomId)
 }
 
-func (c ClientsRepository) Publish(roomId string) error {
+func (c ClientsRepository) publish(roomId string) error {
 	clients, err := c.client.SMembers(context.Background(), roomId+keyPostfix).Result()
 	if err != nil {
 		return err
