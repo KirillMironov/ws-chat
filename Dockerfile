@@ -1,4 +1,4 @@
-FROM golang:1.17-alpine3.14 AS builder
+FROM golang:1.18-alpine3.14 AS builder
 ARG TARGETARCH
 ENV CGO_ENABLED=0
 COPY . /app

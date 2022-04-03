@@ -5,12 +5,16 @@ const (
 	ConnectedClients = "connected-clients"
 )
 
-type Message struct {
-	Event   string  `json:"event"`
-	Payload payload `json:"payload"`
+type text interface {
+	string | []string
 }
 
-type payload struct {
-	Username string      `json:"username,omitempty"`
-	Text     interface{} `json:"text"`
+type Message[T text] struct {
+	Event      string `json:"event"`
+	Payload[T] `json:"payload"`
+}
+
+type Payload[T text] struct {
+	Username string `json:"username,omitempty"`
+	Text     T      `json:"text"`
 }

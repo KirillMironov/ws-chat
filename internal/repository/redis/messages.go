@@ -16,9 +16,13 @@ func NewMessagesRepository(client *redis.Client) *MessagesRepository {
 }
 
 func (m MessagesRepository) Publish(client *domain.Client, msg string) error {
-	var message = domain.Message{Event: domain.ChatMessage}
-	message.Payload.Username = client.Username
-	message.Payload.Text = msg
+	var message = domain.Message[string]{
+		Event: domain.ChatMessage,
+		Payload: domain.Payload[string]{
+			Username: client.Username,
+			Text:     msg,
+		},
+	}
 
 	encoded, err := json.Marshal(message)
 	if err != nil {

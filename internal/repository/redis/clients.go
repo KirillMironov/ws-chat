@@ -41,8 +41,10 @@ func (c ClientsRepository) publish(roomId string) error {
 		return err
 	}
 
-	var message = domain.Message{Event: domain.ConnectedClients}
-	message.Payload.Text = clients
+	var message = domain.Message[[]string]{
+		Event:   domain.ConnectedClients,
+		Payload: domain.Payload[[]string]{Text: clients},
+	}
 
 	encoded, err := json.Marshal(message)
 	if err != nil {
